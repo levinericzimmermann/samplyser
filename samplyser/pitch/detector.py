@@ -1,13 +1,15 @@
 from numpy.fft import rfft
-from numpy import argmax, mean, diff, log
 from matplotlib.mlab import find
 from scipy.signal import blackmanharris, fftconvolve
 from samplyser.pitch.parabolic import parabolic
-
+import numpy as np
+from scipy.signal import kaiser, decimate
 
 """
 Frequeny detection functions written by endolith:
 https://gist.github.com/endolith/255291
+and
+https://github.com/endolith/waveform_analysis/blob/master/waveform_analysis/freq_estimation.py
 """
 
 
@@ -28,7 +30,7 @@ def freq_from_crossings(sig, fs):
     # Some other interpolation based on neighboring points might be better.
     # Spline, cubic, whatever
 
-    return fs / mean(diff(crossings))
+    return fs / np.mean(np.diff(crossings))
 
 
 def freq_from_fft(sig, fs):
@@ -40,8 +42,8 @@ def freq_from_fft(sig, fs):
     f = rfft(windowed)
 
     # Find the peak and interpolate to get a more accurate peak
-    i = argmax(abs(f))  # Just use this for less-accurate, naive version
-    true_i = parabolic(log(abs(f)), i)[0]
+    i = np.argmax(abs(f))  # Just use this for less-accurate, naive version
+    true_i = parabolic(np.log(abs(f)), i)[0]
 
     # Convert to equivalent frequency
     return fs * true_i / len(windowed)
@@ -57,40 +59,51 @@ def freq_from_autocorr(sig, fs):
     corr = corr[len(corr)//2:]
 
     # Find the first low point
-    d = diff(corr)
+    d = np.diff(corr)
     start = find(d > 0)[0]
 
     # Find the next peak after the low point (other than 0 lag).  This bit is
     # not reliable for long signals, due to the desired peak occurring between
     # samples, and other peaks appearing higher.
     # Should use a weighting function to de-emphasize the peaks at longer lags.
-    peak = argmax(corr[start:]) + start
+    peak = np.argmax(corr[start:]) + start
     px, py = parabolic(corr, peak)
 
     return fs / px
 
 
-def freq_from_HPS(sig, fs):
+def freq_from_hps(signal, fs):
     """
-    Estimate frequency using harmonic product spectrum (HPS)
+    Original by endolith:
+    https://github.com/endolith/waveform_analysis/blob/master/waveform_analysis/freq_estimation.py
+    Estimate frequency using harmonic product spectrum
+    Low frequency noise piles up and overwhelms the desired peaks
+    Doesn't work well if signal doesn't have harmonics
     """
-    windowed = sig * blackmanharris(len(sig))
+    signal = np.asarray(signal) + 0.0
 
-    from pylab import subplot, plot, log, copy, show
+    N = len(signal)
+    signal -= np.mean(signal)  # Remove DC offset
 
-    # harmonic product spectrum:
-    c = abs(rfft(windowed))
-    maxharms = 8
-    subplot(maxharms, 1, 1)
-    plot(log(c))
-    for x in range(2, maxharms):
-        a = copy(c[::x])  # Should average or maximum instead of decimating
-        # max(c[::x],c[1::x],c[2::x],...)
-        c = c[:len(a)]
-        i = argmax(abs(c))
-        true_i = parabolic(abs(c), i)[0]
-        print('Pass %d: %f Hz' % (x, fs * true_i / len(windowed)))
-        c *= a
-        subplot(maxharms, 1, x)
-        plot(log(c))
-    show()
+    # Compute Fourier transform of windowed signal
+    windowed = signal * kaiser(N, 100)
+
+    # Get spectrum
+    X = np.log(abs(rfft(windowed)))
+
+    # Remove np.mean of spectrum (so sum is not increasingly offset
+    # only in overlap region)
+    X -= np.mean(X)
+
+    # Downsample sum np.logs of spectra instead of multiplying
+    hps = np.copy(X)
+    for h in range(2, 9):  # TODO: choose a smarter upper limit
+        dec = decimate(X, h, zero_phase=True)
+        hps[:len(dec)] += dec
+
+    # Find the peak and interpolate to get a more accurate peak
+    i_peak = np.argmax(hps[:len(dec)])
+    i_interp = parabolic(hps, i_peak)[0]
+
+    # Convert to equivalent frequency
+    return fs * i_interp / N  # Hz

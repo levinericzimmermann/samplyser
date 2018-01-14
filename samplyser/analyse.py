@@ -1,4 +1,5 @@
 from samplyser import pitch
+from samplyser import amplitude
 from samplyser import duration
 import soundfile as sf
 import json
@@ -26,7 +27,8 @@ class Analyser:
         return json.dumps({name: data})
 
 
-SimpleAnalyser = Analyser(pitch.detector.freq_from_autocorr,
+SimpleAnalyser = Analyser(pitch.detector.freq_from_hps,
+                          amplitude.detector.ac_rms,
                           duration.detector.duration_detection)
 
 
@@ -42,7 +44,7 @@ def analyse_bunch(directory: str, analyser: callable=SimpleAnalyser,
     def find_audio_files(directory):
         def is_valid_sf(f):
             return any(f.lower().endswith(
-                    ending.lower()) for ending in sf.available_formats())
+                ending.lower()) for ending in sf.available_formats())
         files = os.listdir(directory)
         return tuple(f for f in files if is_valid_sf(f))
     files = find_audio_files(directory)
