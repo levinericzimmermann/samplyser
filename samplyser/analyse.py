@@ -1,6 +1,7 @@
 from samplyser import pitch
 from samplyser import amplitude
 from samplyser import duration
+from samplyser import spectrum
 import soundfile as sf
 import json
 import os
@@ -11,8 +12,8 @@ class Analyser:
         self.functions = analyse_function
 
     def __call__(self, f, output=False):
-        sample, fs = sf.read(f)
-        analysis = self.analyse(sample, fs)
+        signal, fs = sf.read(f)
+        analysis = self.analyse(signal, fs)
         json = self.convert2json(f, analysis)
         if output is True:
             filename = os.path.splitext(f)[0]
@@ -27,9 +28,15 @@ class Analyser:
         return json.dumps({name: data})
 
 
-SimpleAnalyser = Analyser(pitch.detector.freq_from_hps,
+SimpleAnalyser = Analyser(pitch.detector.freq_from_autocorr,
                           amplitude.detector.ac_rms,
                           duration.detector.duration_detection)
+
+ComplexAnalyser = Analyser(pitch.detector.freq_from_autocorr,
+                           amplitude.detector.ac_rms,
+                           duration.detector.duration_detection,
+                           spectrum.spectral_centroid,
+                           spectrum.spectral_flatness)
 
 
 def analyse_bunch(directory: str, analyser: callable=SimpleAnalyser,

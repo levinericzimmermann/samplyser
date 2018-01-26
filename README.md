@@ -1,6 +1,6 @@
 # samplyser
 
-Automatic creation of metadata from short mono sound files. These metadata could be
+Automatic creation of metadata for short mono sound files. These metadata could be
 saved in the json - format.
 
 The standard form of such generated json may be:
@@ -12,13 +12,14 @@ current state:
 * different frequency analysis - functions (using functions written by [endolith](https://gist.github.com/endolith/255291))
 * rms calculation (using functions written by [endolith](https://gist.github.com/endolith/2c786bf5b53b99ca3879#file-wave_analyzer-py))
 * duration
+* calculate spectral centroid and spectral flatness
 
 to-do:
 -------------
 * add features:
-  * analyse spectral centroid
   * find offset
   * find silence
+  * add multichannel - support
 
 
 installation:
