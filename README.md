@@ -10,7 +10,7 @@ The standard form of such generated json may be:
 current state:
 -------------
 * different frequency analysis - functions (using functions written by [endolith](https://gist.github.com/endolith/255291))
-* rms calculation (using functions written by [endolith](https://gist.github.com/endolith/2c786bf5b53b99ca3879#file-wave_analyzer-py))
+* rms calculation (using functions written by [endolith](https://gist.github.com/endolith/2c786bf5b53b99ca3879#file-wave_analyzer-py) and using [madmom](https://github.com/CPJKU/madmom))
 * duration
 * calculate spectral centroid and spectral flatness
 
@@ -20,6 +20,7 @@ to-do:
   * find offset
   * find silence
   * add multichannel - support
+  * add tests
 
 
 installation:

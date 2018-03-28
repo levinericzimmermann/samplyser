@@ -2,6 +2,7 @@ from samplyser import pitch
 from samplyser import amplitude
 from samplyser import duration
 from samplyser import spectrum
+import madmom
 import soundfile as sf
 import json
 import os
@@ -13,6 +14,8 @@ class Analyser:
 
     def __call__(self, f, output=False):
         signal, fs = sf.read(f)
+        # convert to mono
+        signal = madmom.audio.signal.remix(signal, 1)
         analysis = self.analyse(signal, fs)
         json = self.convert2json(f, analysis)
         if output is True:
@@ -35,8 +38,8 @@ SimpleAnalyser = Analyser(pitch.detector.freq_from_autocorr,
 ComplexAnalyser = Analyser(pitch.detector.freq_from_autocorr,
                            amplitude.detector.ac_rms,
                            duration.detector.duration_detection,
-                           spectrum.spectral_centroid,
-                           spectrum.spectral_flatness)
+                           spectrum.spectrum.spectral_centroid,
+                           spectrum.spectrum.spectral_flatness)
 
 
 def analyse_bunch(directory: str, analyser: callable=SimpleAnalyser,

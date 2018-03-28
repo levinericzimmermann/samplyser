@@ -1,9 +1,11 @@
 import numpy as np
+import madmom
 
 """
 The following functions have been written by endolith.
 https://gist.github.com/endolith/2c786bf5b53b99ca3879#file-wave_analyzer-py
 """
+
 
 def rms_flat(a):
     """
@@ -17,3 +19,7 @@ def ac_rms(signal, fs):
     Return the RMS level of the signal after removing any fixed DC offset
     """
     return rms_flat(signal - np.mean(signal))
+
+
+def madmom_rms(signal, fs):
+    return madmom.audio.signal.root_mean_square(np.array(signal))

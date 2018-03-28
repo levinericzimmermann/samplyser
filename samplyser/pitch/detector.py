@@ -60,15 +60,20 @@ def freq_from_autocorr(sig, fs):
 
     # Find the first low point
     d = np.diff(corr)
-    start = find(d > 0)[0]
+    try:
+        start = find(d > 0)[0]
+    except IndexError:
+        return 0
 
     # Find the next peak after the low point (other than 0 lag).  This bit is
     # not reliable for long signals, due to the desired peak occurring between
     # samples, and other peaks appearing higher.
     # Should use a weighting function to de-emphasize the peaks at longer lags.
     peak = np.argmax(corr[start:]) + start
-    px, py = parabolic(corr, peak)
-
+    try:
+        px, py = parabolic(corr, peak)
+    except IndexError:
+        return 0
     return fs / px
 
 
